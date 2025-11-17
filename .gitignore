@@ -1,0 +1,89 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# PyTorch
+*.pth
+*.pt
+*.ckpt
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Data (demasiado grande para git)
+data/raw/*.txt
+data/raw/*.zip
+data/raw/*.tsv
+data/raw/*.csv
+data/processed/*.jsonl
+data/processed/*.json
+
+# Artifacts (modelos entrenados son grandes)
+artifacts/models/**/*.pt
+artifacts/models/**/*.pth
+artifacts/logs/*.log
+
+# Tokenizers (pueden regenerarse)
+artifacts/tokenizer/*.model
+artifacts/tokenizer/*.vocab
+
+# Resultados (pueden regenerarse)
+resultados/metrics/**/*.jsonl
+resultados/metrics/**/*.txt
+resultados/plots/*.png
+resultados/plots/*.pdf
+
+# Pero mantener estructura de carpetas
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!artifacts/models/.gitkeep
+!artifacts/tokenizer/.gitkeep
+!artifacts/logs/.gitkeep
+!resultados/metrics/.gitkeep
+!resultados/plots/.gitkeep
+
+# Environment
+.env
+.env.local
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
