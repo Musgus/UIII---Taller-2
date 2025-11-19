@@ -108,11 +108,11 @@ def train_tokenizer(texts, lang, vocab_size=config.VOCAB_SIZE):
     print(f"\n🔤 Entrenando tokenizer SentencePiece para '{lang}'...")
     
     # Ajustar vocab_size según el tamaño del corpus
-    # Regla general: vocab_size <= num_sentences / 4
-    max_vocab = max(100, len(texts) // 4)
-    if vocab_size > max_vocab:
-        vocab_size = max_vocab
-        print(f"   ⚠️  Vocabulario ajustado a {vocab_size} (corpus pequeño)")
+    # Usar vocabulario muy conservador: 500-800 tokens es suficiente
+    suggested_vocab = min(800, max(100, len(texts) // 20))
+    if vocab_size > suggested_vocab:
+        vocab_size = suggested_vocab
+        print(f"   ⚠️  Vocabulario ajustado a {vocab_size} (optimizado para corpus de {len(texts):,} ejemplos)")
     
     # Guardar textos temporalmente para SentencePiece
     temp_file = config.TOKENIZER_DIR / f"temp_{lang}.txt"
@@ -203,9 +203,14 @@ def save_processed_data(train_pairs, valid_pairs, test_pairs,
         
         with open(output_file, 'w', encoding='utf-8') as f:
             for src, tgt in tqdm(pairs, desc=f"Guardando {split_name}"):
-                # Tokenizar a IDs
-                src_ids = sp_src.encode(src, out_type=int)
-                tgt_ids = sp_tgt.encode(tgt, out_type=int)
+                # Tokenizar y agregar tokens especiales
+                src_tokens = sp_src.encode(src, out_type=int)
+                tgt_tokens = sp_tgt.encode(tgt, out_type=int)
+
+                # Limitar longitud para dejar espacio a <bos>/<eos>
+                max_inner_len = max(0, config.MAX_LENGTH - 2)
+                src_ids = [config.BOS_IDX] + src_tokens[:max_inner_len] + [config.EOS_IDX]
+                tgt_ids = [config.BOS_IDX] + tgt_tokens[:max_inner_len] + [config.EOS_IDX]
                 
                 # Guardar en formato JSON
                 data = {

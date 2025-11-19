@@ -1,0 +1,11 @@
+{
+  "model_name": "GRU_Attention",
+  "bleu_score": 32.298803053851884,
+  "bleu_by_length": {
+    "short": 32.2297976822044,
+    "medium": 47.180133214678364
+  },
+  "num_examples": 1991,
+  "avg_hypothesis_length": 10.984429934706178,
+  "avg_reference_length": 7.383726770467102
+}

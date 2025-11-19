@@ -116,7 +116,13 @@ TRANSFORMER_CONFIG = {
     "num_decoder_layers": 2,
     "dim_feedforward": 1024,
     "dropout": 0.1,
-    "max_seq_length": MAX_LENGTH
+    "max_seq_length": MAX_LENGTH,
+    "learning_rate": 5e-4,
+    "label_smoothing": 0.1,
+    "warmup_steps": 400,
+    "repetition_penalty": 1.2,
+    "top_k": 5,
+    "temperature": 1.0
 }
 
 # Lista de todas las configuraciones

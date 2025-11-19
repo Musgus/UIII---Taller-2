@@ -1,10 +1,11 @@
 {
   "model_name": "Transformer",
-  "bleu_score": 0.025334795699203185,
+  "bleu_score": 0.0018707020355997206,
   "bleu_by_length": {
-    "short": 0.025334795699203185
+    "short": 0.0018714283401870325,
+    "medium": 0.08093746504746996
   },
-  "num_examples": 50,
-  "avg_hypothesis_length": 59.0,
-  "avg_reference_length": 4.24
+  "num_examples": 1991,
+  "avg_hypothesis_length": 58.23857358111502,
+  "avg_reference_length": 7.383726770467102
 }

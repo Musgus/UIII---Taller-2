@@ -59,12 +59,27 @@ class NMTEvaluator:
         with torch.no_grad():
             # Llamar al método generate del modelo
             if hasattr(self.model, 'generate'):
-                translations = self.model.generate(
-                    src, 
-                    src_mask=src_mask,
-                    max_length=config.MAX_GENERATE_LENGTH,
-                    device=self.device
-                )
+                # RNN Simple no acepta src_mask
+                if 'RNN_Simple' in self.model_name:
+                    translations = self.model.generate(
+                        src,
+                        max_length=config.MAX_GENERATE_LENGTH,
+                        device=self.device
+                    )
+                else:
+                    # LSTM, GRU y Transformer sí aceptan src_mask
+                    result = self.model.generate(
+                        src, 
+                        src_mask=src_mask,
+                        max_length=config.MAX_GENERATE_LENGTH,
+                        device=self.device
+                    )
+                    # LSTM y GRU devuelven (translations, attention_weights)
+                    # Transformer devuelve solo translations
+                    if isinstance(result, tuple):
+                        translations = result[0]
+                    else:
+                        translations = result
             else:
                 raise NotImplementedError(f"Modelo {self.model_name} no tiene método generate")
         

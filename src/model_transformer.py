@@ -200,6 +200,9 @@ class Seq2SeqTransformer(nn.Module):
         )
         
         self.tgt_vocab_size = tgt_vocab_size
+        self.repetition_penalty = config_dict.get('repetition_penalty', 1.0)
+        self.top_k = config_dict.get('top_k', 0)
+        self.temperature = config_dict.get('temperature', 1.0)
         
         # Inicialización de pesos
         self._init_weights()
@@ -270,6 +273,7 @@ class Seq2SeqTransformer(nn.Module):
             
             # Inicializar con <bos>
             ys = torch.full((batch_size, 1), config.BOS_IDX, dtype=torch.long).to(device)
+            torch.manual_seed(config.SEED)
             
             for i in range(max_length - 1):
                 # Crear máscara causal
@@ -283,8 +287,32 @@ class Seq2SeqTransformer(nn.Module):
                     memory_key_padding_mask=src_mask
                 )
                 
-                # Siguiente token (greedy)
-                next_token = out[:, -1].argmax(dim=-1).unsqueeze(1)
+                logits = out[:, -1]  # (batch, vocab)
+
+                # Aplicar temperatura
+                temperature = max(self.temperature, 1e-5)
+                logits = logits / temperature
+
+                # Top-k filtering
+                if self.top_k and 0 < self.top_k < logits.size(1):
+                    top_values, top_indices = torch.topk(logits, self.top_k)
+                    filtered = torch.full_like(logits, float('-inf'))
+                    filtered.scatter_(1, top_indices, top_values)
+                    logits = filtered
+                
+                # Penalizar repeticiones
+                if self.repetition_penalty and self.repetition_penalty > 1.0:
+                    generated_so_far = ys
+                    for b in range(batch_size):
+                        seen_tokens = torch.unique(generated_so_far[b])
+                        for token_id in seen_tokens.tolist():
+                            if token_id in (config.PAD_IDX, config.BOS_IDX):
+                                continue
+                            logits[b, token_id] = logits[b, token_id] / self.repetition_penalty
+                
+                probs = torch.softmax(logits, dim=-1)
+                probs = probs / probs.sum(dim=-1, keepdim=True)
+                next_token = torch.multinomial(probs, num_samples=1)
                 ys = torch.cat([ys, next_token], dim=1)
                 
                 # Parar si todos generaron <eos>

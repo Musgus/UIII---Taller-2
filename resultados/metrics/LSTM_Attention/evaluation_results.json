@@ -1,0 +1,11 @@
+{
+  "model_name": "LSTM_Attention",
+  "bleu_score": 23.204536210581836,
+  "bleu_by_length": {
+    "short": 23.189792900696002,
+    "medium": 25.586331344904494
+  },
+  "num_examples": 1991,
+  "avg_hypothesis_length": 12.751381215469614,
+  "avg_reference_length": 7.383726770467102
+}

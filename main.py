@@ -70,12 +70,14 @@ def train_all_models(train_loader, valid_loader, src_vocab_size, tgt_vocab_size)
         model = create_fn(src_vocab_size, tgt_vocab_size)
         
         # Crear trainer
+        learning_rate = model_config.get('learning_rate', config.LEARNING_RATE)
+
         trainer = Trainer(
             model=model,
             train_loader=train_loader,
             valid_loader=valid_loader,
             model_name=model_name,
-            learning_rate=config.LEARNING_RATE
+            learning_rate=learning_rate
         )
         
         # Entrenar

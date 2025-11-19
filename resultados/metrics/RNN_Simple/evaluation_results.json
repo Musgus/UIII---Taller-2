@@ -1,0 +1,11 @@
+{
+  "model_name": "RNN_Simple",
+  "bleu_score": 5.468642559031461,
+  "bleu_by_length": {
+    "short": 5.335007514745262,
+    "medium": 43.12718137291222
+  },
+  "num_examples": 1991,
+  "avg_hypothesis_length": 10.187343043696634,
+  "avg_reference_length": 7.383726770467102
+}

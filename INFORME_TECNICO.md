@@ -747,173 +747,154 @@ evaluation_metrics = {
 
 ### 5.1 Métricas de Entrenamiento
 
-#### Tabla Comparativa
+#### Tabla Comparativa - Resultados Reales
 
-| Modelo | Parámetros | Épocas | Tiempo (min) | Train Loss | Valid Loss | BLEU |
-|--------|-----------|--------|--------------|------------|------------|------|
-| **Transformer** | 25M | 15 | 45 | 2.1 | 2.5 | **42.5** |
-| **LSTM Attention** | 20M | 18 | 60 | 2.3 | 2.8 | 38.2 |
-| **GRU Attention** | 18M | 16 | 50 | 2.4 | 2.9 | 37.8 |
-| **RNN Simple** | 15M | 12* | 40 | 3.0 | 3.5 | 30.1 |
+| Modelo | Parámetros | Épocas | Valid Loss | BLEU (Real) | Longitud Prom. Generada |
+|--------|-----------|--------|------------|-------------|------------------------|
+| **RNN Simple** | ~15M | 20 | 0.0001 | **4.55** | 26.6 palabras |
+| **LSTM Attention** | ~20M | 20 | 0.0002 | **4.55** | 3.4 palabras |
+| **GRU Attention** | ~18M | 20 | 0.0000 | **4.55** | 3.4 palabras |
+| **Transformer** | ~25M | 20 | 0.0000 | **0.03** | 59.0 palabras |
 
-**Nota:** *Detenido por early stopping
+**Nota:** Los BLEU scores reales son bajos debido al tamaño limitado del corpus de entrenamiento (~400 ejemplos). El Transformer tiene problemas de sobre-generación (59 palabras vs 4.2 esperadas).
 
 #### Curvas de Pérdida
 
-**Observaciones:**
+**Observaciones basadas en los resultados reales:**
 
-1. **Transformer:**
-   - Convergencia más rápida
-   - Menor oscilación en valid loss
-   - Mejor generalización
+1. **Todos los modelos:**
+   - Convergencia exitosa en 20 épocas
+   - Valid loss muy bajo (prácticamente 0) indica posible overfitting
+   - Dataset pequeño (~400 ejemplos) limita generalización
 
-2. **LSTM Attention:**
-   - Convergencia estable
-   - Ligero overfitting hacia el final
-   - Buen balance rendimiento/recursos
+2. **Transformer:**
+   - Mejor valid loss (0.0000)
+   - Pero BLEU muy bajo (0.03)
+   - Problema: sobre-generación (59 palabras vs 4.2 esperadas)
 
-3. **GRU Attention:**
-   - Similar a LSTM pero ligeramente más rápido
-   - Convergencia comparable
-   - Menos parámetros (ventaja)
+3. **LSTM y GRU Attention:**
+   - Valid loss similar
+   - Mismo BLEU (4.55)
+   - Problema: sub-generación (3.4 palabras vs 4.2 esperadas)
 
 4. **RNN Simple:**
-   - Convergencia más lenta
-   - Valid loss se estanca antes
-   - Early stopping activado en época 12
+   - Ligera mejor valid loss (0.0001)
+   - Mismo BLEU que LSTM/GRU (4.55)
+   - Sobre-generación moderada (26.6 palabras)
 
 ### 5.2 Análisis de BLEU
 
-#### BLEU Score Global
+#### BLEU Score Global - Resultados Reales
 
 ```
-🥇 1. Transformer:      42.5
-🥈 2. LSTM Attention:   38.2
-🥉 3. GRU Attention:    37.8
-   4. RNN Simple:       30.1
+Empate técnico (BLEU = 4.55):
+🥇 RNN Simple:         4.55
+� LSTM Attention:     4.55
+� GRU Attention:      4.55
+❌ Transformer:        0.03 (problemas de generación)
 ```
 
 **Interpretación:**
-- **Transformer:** Excelente (>40 es muy bueno)
-- **LSTM/GRU:** Bueno (30-40 es aceptable/bueno)
-- **RNN Simple:** Aceptable (pero claramente inferior)
+- **BLEU < 5:** Muy bajo - Indica problemas serios de traducción
+- **Causa principal:** Dataset extremadamente pequeño (~400 ejemplos de entrenamiento)
+- **RNN/LSTM/GRU:** Empate técnico, todos con 4.55 BLEU
+- **Transformer:** Significativamente peor (0.03), con problemas de sobre-generación
 
-**Diferencia Transformer vs LSTM:** +4.3 BLEU (~11% mejora)
+**Contexto:** Estos resultados son esperables con un corpus tan reducido. Para comparación, sistemas profesionales usan millones de pares de oraciones y logran BLEU > 30-40.
 
-#### BLEU por Longitud de Oración
+#### BLEU por Longitud de Oración - Resultados Reales
 
-| Longitud | Transformer | LSTM Attn | GRU Attn | RNN Simple |
-|----------|------------|-----------|----------|------------|
-| **Corta** (≤10) | 48.2 | 44.1 | 43.7 | 36.5 |
-| **Media** (11-20) | 39.5 | 35.8 | 35.2 | 27.3 |
-| **Larga** (>20) | 32.1 | 28.4 | 27.9 | 20.8 |
+| Longitud | RNN Simple | LSTM Attn | GRU Attn | Transformer |
+|----------|------------|-----------|----------|-------------|
+| **Corta** (≤10) | 4.55 | 4.55 | 4.55 | 0.03 |
+
+**Nota:** El test set de este proyecto contiene solo oraciones cortas (≤10 palabras, promedio 4.2 palabras).
 
 **Análisis:**
 
-1. **Todos los modelos:**
-   - ✅ Mejor en oraciones cortas
-   - ❌ Degradación en oraciones largas
-   - Patrón esperado (más contexto = más difícil)
+1. **Todos los modelos RNN/LSTM/GRU:**
+   - ✅ Rendimiento idéntico (4.55 BLEU)
+   - El dataset pequeño no permite diferenciar sus capacidades
+   - En oraciones cortas, la complejidad del modelo importa menos
 
 2. **Transformer:**
-   - ✅ **Mejor en TODAS las longitudes**
-   - ✅ Degrada menos en oraciones largas (+13% vs LSTM)
-   - Justifica su ventaja arquitectónica
+   - ❌ Significativamente peor (0.03 BLEU)
+   - Problema de sobre-generación (genera ~59 palabras para inputs de ~4 palabras)
+   - Posible causa: Necesita más datos para aprender a generar longitudes apropiadas
 
-3. **LSTM vs GRU:**
-   - Rendimiento muy similar (~0.5 BLEU diferencia)
-   - GRU ligeramente inferior pero más eficiente
-
-4. **RNN Simple:**
-   - Significativamente peor en todas las categorías
-   - Especialmente malo en oraciones largas
-   - Confirma importancia de atención
+3. **Conclusión:**
+   - Dataset demasiado pequeño para evaluar correctamente
+   - No refleja las ventajas teóricas de cada arquitectura
+   - Se requieren mínimo 10,000-100,000 pares para evaluación significativa
 
 ### 5.3 Análisis de Eficiencia
 
-#### Tiempo de Entrenamiento
+#### Comparación de Resultados
 
 ```
-RNN Simple:        40 min  (baseline)
-Transformer:       45 min  (+12%)
-GRU Attention:     50 min  (+25%)
-LSTM Attention:    60 min  (+50%)
+Modelo              | BLEU  | Valid Loss | Longitud Gen. | Observación
+--------------------|-------|------------|---------------|------------------
+RNN Simple          | 4.55  | 0.0001     | 26.6 palabras | Sobre-genera
+LSTM Attention      | 4.55  | 0.0002     | 3.4 palabras  | Sub-genera
+GRU Attention       | 4.55  | 0.0000     | 3.4 palabras  | Sub-genera
+Transformer         | 0.03  | 0.0000     | 59.0 palabras | Sobre-genera mucho
 ```
 
 **Observaciones:**
 
-1. **Transformer:**
-   - Solo 12% más lento que RNN
-   - Pero +41% mejor BLEU
-   - **ROI excelente**
+1. **Valid Loss vs BLEU:**
+   - Valid loss muy bajo (~0) NO garantiza buen BLEU
+   - Indica overfitting al dataset pequeño
+   - Transformer tiene mejor loss pero peor BLEU
 
-2. **LSTM vs GRU:**
-   - GRU 20% más rápido
-   - Rendimiento similar
-   - **GRU preferible si recursos limitados**
+2. **Problema de Longitud:**
+   - **RNN:** Genera ~6x más palabras de lo necesario (26.6 vs 4.2)
+   - **LSTM/GRU:** Generan menos de lo necesario (3.4 vs 4.2)
+   - **Transformer:** Sobre-generación severa (59 vs 4.2, ~14x más)
 
-3. **Atención:**
-   - Overhead de ~20-50% en tiempo
-   - Pero mejora de ~25% en BLEU
-   - **Trade-off favorable**
-
-#### Parámetros vs Rendimiento
-
-```
-Eficiencia = BLEU / (Parámetros en millones)
-
-Transformer:    42.5 / 25  = 1.70
-LSTM Attention: 38.2 / 20  = 1.91  ← Mejor eficiencia
-GRU Attention:  37.8 / 18  = 2.10  ← Más eficiente
-RNN Simple:     30.1 / 15  = 2.01
-```
-
-**Insights:**
-
-- **GRU:** Más eficiente en parámetros
-- **LSTM:** Buen balance
-- **Transformer:** Menos eficiente en parámetros, pero mejor absoluto
-- **RNN Simple:** Eficiente pero bajo rendimiento
+3. **Empate RNN/LSTM/GRU:**
+   - Los tres logran mismo BLEU (4.55)
+   - Dataset pequeño no permite distinguir capacidades
+   - En producción con más datos, LSTM/GRU serían superiores
 
 ### 5.4 Análisis de Errores
 
-#### Tipos de Errores Comunes
+#### Tipos de Errores Comunes (Basados en Dataset Pequeño)
 
 **Todos los modelos:**
 
-1. **Palabras OOV (Out-of-Vocabulary):**
-   - Mitigado por SentencePiece (subwords)
-   - Aún problemático con nombres propios raros
+1. **Limitaciones por Dataset Pequeño:**
+   - Solo ~400 ejemplos de entrenamiento
+   - Overfitting severo (valid loss ~0 pero BLEU bajo)
+   - No generaliza a oraciones fuera del conjunto de entrenamiento
 
-2. **Reordenamiento de palabras:**
-   - Español: "el coche rojo"
-   - Inglés: "the red car"
-   - Transformer maneja mejor (atención global)
+2. **Problemas de Longitud de Generación:**
+   - **RNN:** Genera demasiado (26.6 palabras vs 4.2 esperadas)
+   - **LSTM/GRU:** Generan muy poco (3.4 palabras vs 4.2 esperadas)
+   - **Transformer:** Sobre-generación extrema (59 palabras vs 4.2 esperadas)
 
-3. **Idiomismos y expresiones:**
-   - "estar en las nubes" → "to be daydreaming"
-   - Todos los modelos tienden a traducir literalmente
-
-4. **Concordancia de género/número:**
-   - Español: "las casas grandes"
-   - Errores en mantener concordancia en inglés
+3. **Vocabulario Limitado:**
+   - Vocab size = 100 (extremadamente pequeño)
+   - En producción se usan 16,000-32,000 tokens
+   - Limita expresividad del modelo
 
 #### Errores Específicos por Modelo
 
 **RNN Simple:**
-- ❌ Olvida inicio de oración (vanishing gradient)
-- ❌ Traducciones más cortas que el esperado
-- ❌ Repite palabras a veces
+- ✅ BLEU comparable a modelos más complejos (en este dataset)
+- ❌ Sobre-genera ~6x (26.6 palabras)
+- ❌ No aprende a terminar oraciones correctamente
 
 **LSTM/GRU Attention:**
-- ✅ Buen alineamiento general
-- ❌ Ocasionalmente ignora palabras del source
-- ❌ Errores en oraciones con múltiples cláusulas
+- ✅ Mismo BLEU que RNN (4.55)
+- ❌ Sub-generación (3.4 palabras, faltan 0.88 palabras en promedio)
+- ❌ Dataset pequeño no permite aprovechar la atención
 
 **Transformer:**
-- ✅ Mejor manejo de estructura global
-- ✅ Menos omisiones
-- ❌ Ocasionalmente sobre-genera (traducciones largas)
+- ❌ Peor BLEU de todos (0.03)
+- ❌ Sobre-generación severa (14x más palabras)
+- ❌ Requiere MUCHO más datos para funcionar correctamente
+- ℹ️ En datasets grandes (>100k ejemplos), el Transformer domina
 
 ### 5.5 Ejemplos de Traducción
 
@@ -985,7 +966,7 @@ sofa   → [0.9: sofá,  ...]               ✅ Perfecto
 
 **Conclusión:** Atención aprende alineamiento source-target correctamente
 
-### 5.7 Comparación con Estado del Arte
+### 5.6 Comparación con Estado del Arte
 
 #### Contexto
 
@@ -995,26 +976,27 @@ sofa   → [0.9: sofá,  ...]               ✅ Perfecto
 - BLEU: 50-60+ en es-en
 
 **Nuestros modelos:**
-- Transformers pequeños (25M parámetros)
-- Entrenados en ~100k pares
-- BLEU: 42.5
+- Corpus extremadamente pequeño (~400 pares de entrenamiento)
+- Vocabulario limitado (100 tokens vs 16,000+ típico)
+- BLEU: 4.55 (RNN/LSTM/GRU) y 0.03 (Transformer)
 
 #### Gap Analysis
 
 ```
 BLEU State-of-Art:  ~55
-BLEU Nuestro:       42.5
-Gap:                12.5 puntos
+BLEU Nuestro:       4.55 (mejor caso)
+Gap:                ~50 puntos
 ```
 
 **Factores del gap:**
 
-1. **Tamaño del modelo:** 100M vs 25M (~4x)
-2. **Datos de entrenamiento:** 100M vs 100k pares (~1000x)
-3. **Hiperparámetros:** Optimización extensiva vs básica
-4. **Técnicas avanzadas:** Beam search, ensemble, etc.
+1. **🔴 CRÍTICO - Tamaño del dataset:** 100M vs 400 pares (~250,000x diferencia)
+2. **🔴 CRÍTICO - Vocabulario:** 32,000 vs 100 tokens (~320x diferencia)
+3. **Arquitectura:** Modelos production tienen 6-12 capas vs nuestras 2
+4. **Hiperparámetros:** Optimización extensiva vs configuración básica
+5. **Técnicas avanzadas:** Beam search, ensemble, back-translation, etc.
 
-**Importante:** Para un proyecto educativo con recursos limitados, 42.5 BLEU es **excelente**.
+**Importante:** Los resultados de este proyecto reflejan las limitaciones del dataset, NO las capacidades reales de las arquitecturas implementadas. Con un corpus adecuado (>10,000 pares), se esperarían BLEU de 20-30 para modelos educativos.
 
 ---
 
@@ -1209,25 +1191,3 @@ Este proyecto demuestra:
 5. **Tiedemann, J. (2012).** *Parallel data, tools and interfaces in OPUS.* Proceedings of the Eight International Conference on Language Resources and Evaluation (LREC'12).
 
 6. **OPUS Tatoeba Corpus.** https://opus.nlpl.eu/Tatoeba.php
-
-### Herramientas
-
-7. **Kudo, T., & Richardson, J. (2018).** *SentencePiece: A simple and language independent approach to subword tokenization and detokenization.* arXiv preprint arXiv:1808.06226.
-
-8. **Post, M. (2018).** *A call for clarity in reporting BLEU scores.* arXiv preprint arXiv:1804.08771. (sacreBLEU)
-
-### Libros y Tutoriales
-
-9. **Jurafsky, D., & Martin, J. H. (2023).** *Speech and Language Processing.* 3rd edition draft.
-
-10. **Goodfellow, I., Bengio, Y., Courville, A., & Bengio, Y. (2016).** *Deep learning* (Vol. 1). MIT press Cambridge.
-
----
-
-**Fin del Informe Técnico**
-
----
-
-**Autor:** Proyecto NMT - IA III  
-**Fecha:** Noviembre 2025  
-**Versión:** 1.0

@@ -213,6 +213,14 @@ class Tokenizer:
     
     def batch_decode(self, batch_ids, skip_special_tokens=True):
         """Decodifica un batch de IDs"""
+        # Convertir tensores a listas si es necesario
+        if torch.is_tensor(batch_ids):
+            batch_ids = batch_ids.cpu().tolist()
+        
+        # Si es un tensor 1D, convertir a lista de listas
+        if isinstance(batch_ids[0], int):
+            batch_ids = [batch_ids]
+        
         return [self.decode(ids, skip_special_tokens) for ids in batch_ids]
     
     @property

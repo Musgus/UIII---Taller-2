@@ -35,19 +35,49 @@ class Trainer:
         self.model_name = model_name
         self.device = device
         
-        # Criterio de loss (ignorar padding)
-        self.criterion = nn.CrossEntropyLoss(ignore_index=config.PAD_IDX)
+        # Configuración específica para Transformer
+        is_transformer = 'Transformer' in self.model_name
+        label_smoothing = 0.0
+        self.scheduler_per_step = False
+        
+        if is_transformer:
+            label_smoothing = config.TRANSFORMER_CONFIG.get('label_smoothing', 0.0)
+        
+        # Criterio de loss (ignorar padding, con smoothing opcional)
+        self.criterion = nn.CrossEntropyLoss(
+            ignore_index=config.PAD_IDX,
+            label_smoothing=label_smoothing
+        )
         
         # Optimizador
-        self.optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+        if is_transformer:
+            adam_betas = config.TRANSFORMER_CONFIG.get('adam_betas', (0.9, 0.98))
+            adam_eps = config.TRANSFORMER_CONFIG.get('adam_eps', 1e-9)
+            self.optimizer = optim.Adam(
+                model.parameters(),
+                lr=learning_rate,
+                betas=adam_betas,
+                eps=adam_eps
+            )
+        else:
+            self.optimizer = optim.Adam(model.parameters(), lr=learning_rate)
         
-        # Scheduler: reduce LR si valid loss no mejora
-        self.scheduler = ReduceLROnPlateau(
-            self.optimizer,
-            mode='min',
-            factor=0.5,
-            patience=2
-        )
+        # Scheduler
+        if is_transformer:
+            warmup_steps = config.TRANSFORMER_CONFIG.get('warmup_steps', 400)
+            warmup_steps = max(1, warmup_steps)
+            self.scheduler_per_step = True
+            self.scheduler = optim.lr_scheduler.LambdaLR(
+                self.optimizer,
+                lr_lambda=lambda step: min((step + 1) / warmup_steps, 1.0)
+            )
+        else:
+            self.scheduler = ReduceLROnPlateau(
+                self.optimizer,
+                mode='min',
+                factor=0.5,
+                patience=2
+            )
         
         # Directorios de guardado
         self.model_dir = config.MODELS_DIR / model_name
@@ -118,6 +148,9 @@ class Trainer:
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), config.GRADIENT_CLIP)
             
             self.optimizer.step()
+            
+            if self.scheduler_per_step:
+                self.scheduler.step()
             
             epoch_loss += loss.item()
             
@@ -256,7 +289,8 @@ class Trainer:
             )
             
             # Actualizar scheduler
-            self.scheduler.step(valid_loss)
+            if not self.scheduler_per_step:
+                self.scheduler.step(valid_loss)
             
             # Mostrar resultados
             print(f"\n📈 Resultados de la época:")
